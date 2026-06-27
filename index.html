@@ -204,6 +204,10 @@
   .pwd-strength-fill { height: 100%; border-radius: 99px; transition: width .3s, background .3s; width: 0%; }
   .pwd-hint { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
 
+  /* MODAL WHATSAPP */
+  #modal-whatsapp .btn-primary { background: #25D366 !important; }
+  #modal-whatsapp .btn-primary:hover { filter: brightness(1.1); }
+
   /* PORTARIA TOGGLE */
   .portaria-row { display: flex; gap: 10px; margin-bottom: 6px; }
   .portaria-btn {
@@ -229,6 +233,22 @@
 </style>
 </head>
 <body>
+
+<!-- MODAL WHATSAPP PORTARIA -->
+<div class="modal-backdrop" id="modal-whatsapp">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:460px;">
+    <div style="font-size:2rem;margin-bottom:10px;">📱</div>
+    <div class="modal-title">Reportar à portaria via WhatsApp</div>
+    <div class="modal-sub">Confira a mensagem que será enviada à portaria:</div>
+    <div id="wa-preview" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;font-size:0.82rem;line-height:1.7;color:var(--text);white-space:pre-wrap;max-height:220px;overflow-y:auto;"></div>
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn btn-ghost" onclick="closeWAModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="openWhatsApp()" style="width:auto;flex:1;background:#25D366;color:#fff;">
+        Abrir WhatsApp →
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- LIGHTBOX -->
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
@@ -334,14 +354,13 @@
 
       <div class="form-row" id="portaria-row">
         <label>
-          Ocorrência reportada à portaria?
-          <span id="portaria-obrig-label" style="font-size:0.7rem;color:var(--danger);text-transform:none;letter-spacing:0;font-weight:400;display:none;"> * obrigatório para Alta / Urgente</span>
+          Deseja reportar esta ocorrência à portaria? *
         </label>
         <div class="portaria-row">
-          <button type="button" class="portaria-btn" id="portaria-sim" onclick="selectPortaria('Sim')">✅ Sim, já reportei</button>
-          <button type="button" class="portaria-btn" id="portaria-nao" onclick="selectPortaria('Não')">❌ Não reportei</button>
+          <button type="button" class="portaria-btn" id="portaria-sim" onclick="selectPortaria('Sim')">✅ Sim, reportar à portaria</button>
+          <button type="button" class="portaria-btn" id="portaria-nao" onclick="selectPortaria('Não')">❌ Não, apenas registrar</button>
         </div>
-        <div class="portaria-obrig" id="portaria-err">Por favor, informe se a ocorrência foi reportada à portaria.</div>
+        <div class="portaria-obrig" id="portaria-err">Por favor, selecione uma das opções acima.</div>
       </div>
       <div class="form-row"><label>Descrição detalhada *</label><textarea id="f-desc" placeholder="Descreva o que aconteceu, onde, quando e qualquer detalhe relevante..."></textarea></div>
 
@@ -457,13 +476,20 @@ const CLD_PRESET = "ocorrencias_unsigned";   // ex: "ocorrencias_unsigned"
 // ║  4. Cole Public Key, Service ID e Template ID abaixo         ║
 // ╚═══════════════════════════════════════════════════════════════╝
 const EMAILJS_PUBLIC_KEY  = "r4t6R7DsTn-gcvDaL";   // Account › API Keys › Public Key
-const EMAILJS_SERVICE_ID  = "service_2za0kj4";   // Email Services › seu serviço
+const EMAILJS_SERVICE_ID  = "service_vupkfca";   // Email Services › seu serviço
 const EMAILJS_TEMPLATE_ID = "template_tp67hy7";   // Email Templates › seu template
 // E-mail(s) que receberão a notificação (síndico / quem desejar)
 const NOTIFICATION_EMAILS = [
   "sindico.arimateia@outlook.com", "netomaruagem@yahoo.com.br"
   // adicione mais: , "outro@email.com"
 ];
+
+// ╔═══════════════════════════════════════════════════════════════╗
+// ║  📱 WHATSAPP PORTARIA — número com DDI+DDD sem espaços       ║
+// ║  Ex: "5584999990000"  (55=Brasil, 84=Natal, 9 dígitos)       ║
+// ║  Deixe "" para desativar                                      ║
+// ╚═══════════════════════════════════════════════════════════════╝
+const WHATSAPP_PORTARIA = "558433466683"; // ← substitua pelo número real da portaria
 
 // ╔═══════════════════════════════════════════════════════════════╗
 // ║  👥 GESTORES — atualize com dados reais                      ║
@@ -488,6 +514,7 @@ let auth, db, unsub = null;
 let ocorrencias = [], filter = 'todas', openId = null, me = null;
 let files = [], ready = false;
 let portaria = null; // 'Sim' | 'Não' | null
+let pendingWA = null;
 
 function init() {
   if (FB.apiKey === "COLOQUE_AQUI" || CLD_CLOUD === "COLOQUE_AQUI") {
@@ -517,6 +544,7 @@ window.openModal=openModal; window.closeModal=closeModal;
 window.saveNewPassword=saveNewPassword; window.checkPwdStrength=checkPwdStrength;
 window.exportXLSX=exportXLSX;
 window.selectPortaria=selectPortaria;
+window.closeWAModal=closeWAModal; window.openWhatsApp=openWhatsApp;
 
 function goPage(p) {
   document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
@@ -558,8 +586,7 @@ function selectPortaria(val) {
 
 // Show/hide portaria obligation label when urgência changes
 document.getElementById('f-urg').addEventListener('change', function() {
-  const isUrgent = ['Alta','Urgente'].includes(this.value);
-  document.getElementById('portaria-obrig-label').style.display = isUrgent ? 'inline' : 'none';
+  // portaria is always required — nothing to toggle
 });
 
 // CLOUDINARY UPLOAD
@@ -593,14 +620,13 @@ async function submitOccurrence() {
   const desc=document.getElementById('f-desc').value.trim();
   if(!nome||!unid||!cat||!tit||!desc){showErr('Preencha todos os campos obrigatórios (*). ');return;}
 
-  // Portaria: obrigatório se urgência Alta ou Urgente
-  const urg = document.getElementById('f-urg').value;
-  if (['Alta','Urgente'].includes(urg) && !portaria) {
+  // Portaria: sempre obrigatório
+  if (!portaria) {
     document.getElementById('portaria-err').style.display = 'block';
-    document.getElementById('portaria-obrig-label').style.display = 'inline';
-    showErr('Para urgência Alta ou Urgente, informe se a ocorrência foi reportada à portaria.');
+    showErr('Informe se deseja reportar a ocorrência à portaria.');
     return;
   }
+  const urg = document.getElementById('f-urg').value;
   const btn=document.getElementById('btnSend');
   btn.disabled=true; btn.innerHTML='<span class="spin"></span> Enviando…';
   try {
@@ -621,14 +647,17 @@ async function submitOccurrence() {
     });
     // Send email notification
     sendNotification({ nome, unidade: unid, telefone: tel, categoria: cat, urgencia: urg, portaria: portaria || 'Não informado', titulo: tit, descricao: desc });
+    // Store data for WhatsApp modal
+    pendingWA = { nome, unidade: unid, telefone: tel, categoria: cat, urgencia: urg, portaria, titulo: tit, descricao: desc };
     ['f-nome','f-titulo','f-desc','f-tel'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('f-cat').value='';
     document.getElementById('f-urg').value='Normal';
-    document.getElementById('portaria-obrig-label').style.display='none';
     portaria=null; selectPortaria(null);
     files=[]; renderPrev();
     const ok=document.getElementById('alert-ok');
     ok.style.display='block'; setTimeout(()=>ok.style.display='none',5000);
+    // Open WhatsApp only if user chose to report to portaria
+    if (WHATSAPP_PORTARIA && pendingWA.portaria === 'Sim') showWAModal(pendingWA);
   } catch(e){ showErr('Erro: '+e.message); }
   btn.disabled=false; btn.innerHTML='Enviar ocorrência →';
 }
@@ -900,6 +929,38 @@ function exportXLSX() {
   const label = filter === 'todas' ? 'todas' : filter.toLowerCase().replace(/ /g,'-');
   const date  = new Date().toISOString().slice(0,10);
   XLSX.writeFile(wb, `ocorrencias-${label}-${date}.xlsx`);
+}
+
+// WHATSAPP PORTARIA
+function showWAModal(d) {
+  const now = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const msg =
+`🏢 *Nova Ocorrência — Assuncion Gili*
+
+📅 ${now}
+👤 ${d.nome} — ${d.unidade}${d.telefone ? '\n📞 ' + d.telefone : ''}
+
+📂 ${d.categoria}
+⚠️ Urgência: ${d.urgencia}
+🏠 Reportou à portaria: ${d.portaria}
+
+📌 *${d.titulo}*
+${d.descricao}`;
+
+  document.getElementById('wa-preview').textContent = msg;
+  window._waMsg = msg;
+  document.getElementById('modal-whatsapp').classList.add('open');
+}
+
+function openWhatsApp() {
+  const encoded = encodeURIComponent(window._waMsg || '');
+  window.open(`https://wa.me/${WHATSAPP_PORTARIA}?text=${encoded}`, '_blank');
+  closeWAModal();
+}
+
+function closeWAModal() {
+  document.getElementById('modal-whatsapp').classList.remove('open');
+  pendingWA = null;
 }
 
 init();
