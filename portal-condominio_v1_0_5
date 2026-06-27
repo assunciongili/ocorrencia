@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal do Condomínio Assuncion Gili</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d12;
+    --surface: #16161e;
+    --surface2: #1e1e28;
+    --surface3: #252532;
+    --border: #2a2a3a;
+    --accent: #c8f04d;
+    --accent-dim: rgba(200,240,77,0.10);
+    --purple: #8b7cf8;
+    --purple-dim: rgba(139,124,248,0.12);
+    --text: #eeeef5;
+    --muted: #72728a;
+    --danger: #f0605a;
+    --warning: #f0aa4d;
+    --success: #4df09e;
+    --info: #4db8f0;
+    --radius: 14px;
+    --radius-sm: 9px;
+  }
+
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header {
+    background: rgba(22,22,30,0.9); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border); padding: 0 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 62px; position: sticky; top: 0; z-index: 200;
+  }
+  .logo { display: flex; align-items: center; gap: 0; }
+  .logo img { height: 44px; width: auto; display: block; }
+  .logo-badge { display: none; }
+  @media (max-width: 640px) { .logo img { height: 34px; } }
+  .nav-pills { display: flex; gap: 4px; background: var(--surface2); border-radius: 10px; padding: 4px; }
+  .nav-pill { padding: 6px 18px; border-radius: 7px; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.84rem; font-weight: 500; background: transparent; color: var(--muted); transition: all .2s; }
+  .nav-pill.active { background: var(--accent); color: #0d0d12; font-weight: 700; }
+  .nav-pill:not(.active):hover { color: var(--text); }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .morador-wrap { max-width: 640px; margin: 48px auto; padding: 0 20px 60px; }
+  .page-eyebrow { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--accent); margin-bottom: 8px; }
+  .page-title { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 6px; }
+  .page-sub { color: var(--muted); font-size: 0.93rem; margin-bottom: 32px; line-height: 1.6; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px 28px; margin-bottom: 16px; }
+
+  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-row { margin-bottom: 16px; }
+  .form-row:last-child { margin-bottom: 0; }
+
+  label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 6px; }
+  input[type=text], input[type=email], input[type=password], textarea, select {
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 13px; color: var(--text);
+    font-family: 'DM Sans', sans-serif; font-size: 0.93rem; outline: none; transition: border-color .2s;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 96px; line-height: 1.6; }
+  select option { background: var(--surface2); }
+
+  .file-drop {
+    border: 2px dashed var(--border); border-radius: var(--radius-sm);
+    padding: 22px; text-align: center; cursor: pointer; transition: all .2s;
+    background: var(--surface2); position: relative;
+  }
+  .file-drop:hover, .file-drop.dragover { border-color: var(--accent); background: var(--accent-dim); }
+  .file-drop input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .file-drop-icon { font-size: 1.8rem; margin-bottom: 6px; }
+  .file-drop-text { font-size: 0.85rem; color: var(--muted); }
+  .file-drop-text strong { color: var(--accent); }
+  .file-preview { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .file-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--surface3); border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; font-size: 0.8rem; max-width: 220px; }
+  .file-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-chip-rm { cursor: pointer; color: var(--muted); flex-shrink: 0; font-size: 1rem; line-height: 1; }
+  .file-chip-rm:hover { color: var(--danger); }
+
+  .upload-progress { margin-top: 10px; display: none; }
+  .progress-bar-wrap { height: 5px; background: var(--border); border-radius: 99px; overflow: hidden; margin-top: 4px; }
+  .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width .3s; width: 0%; }
+  .progress-label { font-size: 0.78rem; color: var(--muted); }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 24px; border-radius: 10px; border: none; font-family: 'DM Sans', sans-serif; font-size: 0.93rem; font-weight: 700; cursor: pointer; transition: all .18s; }
+  .btn-primary { background: var(--accent); color: #0d0d12; width: 100%; font-size: 1rem; }
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-sm { padding: 7px 16px; font-size: 0.82rem; border-radius: 8px; }
+
+  .alert { border-radius: var(--radius-sm); padding: 14px 18px; font-size: 0.9rem; margin-bottom: 16px; display: none; animation: fadeSlide .3s ease; }
+  .alert-success { background: rgba(77,240,158,0.08); border: 1px solid rgba(77,240,158,0.3); color: var(--success); }
+  .alert-error   { background: rgba(240,96,90,0.08);  border: 1px solid rgba(240,96,90,0.3);  color: var(--danger); }
+  @keyframes fadeSlide { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+
+  .config-warn { background: rgba(240,170,77,.08); border: 1px solid rgba(240,170,77,.3); border-radius: var(--radius-sm); padding: 14px 18px; color: var(--warning); font-size: 0.85rem; margin-bottom: 20px; line-height: 1.6; display: none; }
+  .config-warn strong { display: block; margin-bottom: 4px; }
+
+  .login-wrap { max-width: 400px; margin: 80px auto; padding: 0 20px; text-align: center; }
+  .login-icon { font-size: 2.8rem; margin-bottom: 14px; }
+  .login-hint { color: var(--muted); font-size: 0.8rem; margin-top: 10px; }
+
+  .dash-wrap { max-width: 1040px; margin: 0 auto; padding: 36px 20px 60px; }
+  .dash-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; gap: 12px; flex-wrap: wrap; }
+  .user-badge { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 99px; padding: 6px 14px 6px 8px; }
+  .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--purple); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #fff; }
+  .user-name { font-size: 0.82rem; font-weight: 600; }
+  .user-role { font-size: 0.72rem; color: var(--muted); }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+  .stat-lbl { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 8px; }
+  .stat-num { font-family: 'Syne', sans-serif; font-size: 2.1rem; font-weight: 800; line-height: 1; }
+  .c-accent{color:var(--accent)} .c-danger{color:var(--danger)} .c-warn{color:var(--warning)} .c-success{color:var(--success)}
+
+  .toolbar { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; align-items: center; }
+  .filter-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .fpill { padding: 6px 14px; border-radius: 99px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all .15s; }
+  .fpill.active, .fpill:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .search-wrap { margin-left: auto; }
+  .search-wrap input { width: 220px; }
+
+  .occ-list { display: flex; flex-direction: column; gap: 10px; }
+  .occ-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: border-color .15s; }
+  .occ-card:hover { border-color: var(--purple); }
+  .occ-card-head { display: flex; align-items: flex-start; gap: 14px; padding: 18px 20px; cursor: pointer; }
+  .occ-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .dot-aberta    { background: var(--danger);  box-shadow: 0 0 6px var(--danger); }
+  .dot-andamento { background: var(--warning); box-shadow: 0 0 6px var(--warning); }
+  .dot-resolvida { background: var(--success); }
+  .occ-main { flex: 1; min-width: 0; }
+  .occ-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 5px; }
+  .badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 99px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+  .b-aberta    { background: rgba(240,96,90,.12);  color: var(--danger);  border: 1px solid rgba(240,96,90,.25); }
+  .b-andamento { background: rgba(240,170,77,.12); color: var(--warning); border: 1px solid rgba(240,170,77,.25); }
+  .b-resolvida { background: rgba(77,240,158,.12); color: var(--success); border: 1px solid rgba(77,240,158,.25); }
+  .b-cat    { background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(139,124,248,.25); }
+  .b-urg    { background: rgba(240,96,90,.12);  color: var(--danger);  border: 1px solid rgba(240,96,90,.25); }
+  .b-alta   { background: rgba(240,170,77,.12); color: var(--warning); border: 1px solid rgba(240,170,77,.25); }
+  .b-attach { background: rgba(77,184,240,.1);  color: var(--info);    border: 1px solid rgba(77,184,240,.2); }
+
+  .occ-title-text { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.97rem; margin-bottom: 3px; }
+  .occ-meta-line  { font-size: 0.8rem; color: var(--muted); }
+  .occ-time { font-size: 0.76rem; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+
+  .occ-body { display: none; border-top: 1px solid var(--border); padding: 18px 20px 20px; }
+  .occ-card.open .occ-body { display: block; }
+  .occ-desc-text { font-size: 0.91rem; line-height: 1.75; margin-bottom: 16px; }
+
+  /* image grid + lightbox */
+  .attach-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .attach-thumb { position: relative; width: 86px; height: 86px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); background: var(--surface2); cursor: pointer; flex-shrink: 0; }
+  .attach-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .attach-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .2s; font-size: 1.3rem; }
+  .attach-thumb:hover .attach-overlay { opacity: 1; }
+  .attach-file { display: inline-flex; align-items: center; gap: 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 6px 12px; font-size: 0.8rem; color: var(--info); text-decoration: none; transition: border-color .15s; }
+  .attach-file:hover { border-color: var(--info); }
+
+  .lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.92); z-index: 999; align-items: center; justify-content: center; }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: 92vw; max-height: 92vh; border-radius: 10px; object-fit: contain; }
+  .lb-close { position: absolute; top: 18px; right: 22px; font-size: 2rem; cursor: pointer; color: #fff; line-height: 1; }
+
+  .status-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .status-bar > span { font-size: 0.78rem; color: var(--muted); }
+  .sbtn { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all .15s; }
+  .sbtn:hover { border-color: var(--accent); color: var(--accent); }
+  .sbtn.del:hover { border-color: var(--danger); color: var(--danger); }
+  .sbtn.active-status { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+  .notes-section { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 14px; }
+  .notes-lbl { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 8px; }
+  .note-item { background: var(--surface2); border-radius: 8px; padding: 10px 13px; margin-bottom: 7px; font-size: 0.84rem; line-height: 1.5; }
+  .note-meta { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+  .note-row { display: flex; gap: 8px; margin-top: 8px; }
+  .note-row input { flex: 1; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty-icon { font-size: 2.8rem; margin-bottom: 12px; }
+  .spin { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: sp .7s linear infinite; }
+  @keyframes sp { to { transform: rotate(360deg); } }
+
+  /* MODAL */
+  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 500; align-items: center; justify-content: center; padding: 20px; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; width: 100%; max-width: 400px; animation: fadeSlide .25s ease; }
+  .modal-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.15rem; margin-bottom: 6px; }
+  .modal-sub { color: var(--muted); font-size: 0.85rem; margin-bottom: 22px; line-height: 1.5; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+  .modal-actions .btn { flex: 1; }
+  .pwd-strength { height: 4px; border-radius: 99px; background: var(--border); margin-top: 6px; overflow: hidden; }
+  .pwd-strength-fill { height: 100%; border-radius: 99px; transition: width .3s, background .3s; width: 0%; }
+  .pwd-hint { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+  /* PORTARIA TOGGLE */
+  .portaria-row { display: flex; gap: 10px; margin-bottom: 6px; }
+  .portaria-btn {
+    flex: 1; padding: 10px 8px; border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border); background: var(--surface2);
+    color: var(--muted); font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem; font-weight: 600; cursor: pointer;
+    transition: all .18s; display: flex; align-items: center;
+    justify-content: center; gap: 6px;
+  }
+  .portaria-btn:hover { border-color: var(--accent); color: var(--text); }
+  .portaria-btn.sel-sim { border-color: var(--success); background: rgba(77,240,158,.08); color: var(--success); }
+  .portaria-btn.sel-nao { border-color: var(--danger);  background: rgba(240,96,90,.08);  color: var(--danger); }
+  .portaria-obrig { font-size: 0.78rem; color: var(--danger); margin-top: 4px; display: none; }
+
+  @media (max-width: 640px) {
+    .stats-grid { grid-template-columns: repeat(2,1fr); }
+    .form-grid-2 { grid-template-columns: 1fr; }
+    header { padding: 0 14px; }
+    .search-wrap input { width: 130px; }
+    .logo span { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <span class="lb-close">✕</span>
+  <img id="lb-img" src="" alt="">
+</div>
+
+<!-- MODAL TROCAR SENHA -->
+<div class="modal-backdrop" id="modal-pwd">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">🔑 Alterar senha</div>
+    <div class="modal-sub">Sua nova senha deve ter ao menos 8 caracteres.</div>
+    <div class="form-row">
+      <label>Senha atual</label>
+      <input type="password" id="pwd-atual" placeholder="••••••••">
+    </div>
+    <div class="form-row">
+      <label>Nova senha</label>
+      <input type="password" id="pwd-nova" placeholder="Mínimo 8 caracteres" oninput="checkPwdStrength()">
+      <div class="pwd-strength"><div class="pwd-strength-fill" id="pwd-fill"></div></div>
+      <div class="pwd-hint" id="pwd-hint"></div>
+    </div>
+    <div class="form-row">
+      <label>Confirmar nova senha</label>
+      <input type="password" id="pwd-conf" placeholder="Repita a nova senha">
+    </div>
+    <div id="pwd-modal-err" style="color:var(--danger);font-size:0.82rem;margin-top:4px;display:none;"></div>
+    <div id="pwd-modal-ok" style="color:var(--success);font-size:0.82rem;margin-top:4px;display:none;">✅ Senha alterada com sucesso!</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-pwd-save" onclick="saveNewPassword()" style="width:auto;flex:1;">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <img src="data:image/png;base64,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" alt="Assuncion Gili Residencial">
+  </div>
+  <div class="nav-pills">
+    <button class="nav-pill active" id="tab-morador" onclick="goPage('morador')">🏠 Registrar Ocorrência</button>
+    <button class="nav-pill" id="tab-gestao" onclick="goPage('gestao')">🔑 Gestão</button>
+  </div>
+</header>
+
+<!-- ══════ MORADOR ══════ -->
+<div id="page-morador" class="page active">
+  <div class="morador-wrap">
+    <div class="page-eyebrow">Condomínio</div>
+    <div class="page-title">Registrar Ocorrência</div>
+    <div class="page-sub">Preencha o formulário abaixo. A identificação é obrigatória para garantir a seriedade de cada solicitação.</div>
+
+    <div id="alert-ok"  class="alert alert-success">✅ Ocorrência registrada! O síndico foi notificado.</div>
+    <div id="alert-err" class="alert alert-error">❌ <span id="err-txt">Erro ao enviar.</span></div>
+    <div id="cfg-warn"  class="config-warn">
+      <strong>⚙️ Sistema não configurado</strong>
+      Substitua as credenciais do Firebase e Cloudinary no script. Veja o README-configuracao.md.
+    </div>
+
+    <div class="card">
+      <div class="form-grid-2">
+        <div class="form-row"><label>Nome completo *</label><input type="text" id="f-nome" placeholder="Ex: João Silva"></div>
+        <div class="form-row"><label>Unidade / Apartamento *</label><input type="text" id="f-unidade" placeholder="Ex: Apto 42 – Torre B"></div>
+      </div>
+
+      <div class="form-row">
+        <label>Telefone / WhatsApp <span style="font-size:0.7rem;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:400;">(opcional)</span></label>
+        <input type="text" id="f-tel" placeholder="Ex: (84) 99999-0000" maxlength="20">
+        <div style="margin-top:6px;display:flex;align-items:flex-start;gap:6px;">
+          <span style="font-size:1rem;flex-shrink:0;line-height:1.4;">💬</span>
+          <span style="font-size:0.78rem;color:var(--muted);line-height:1.5;">Recomendamos informar seu contato para que a gestão possa retornar com atualizações ou esclarecimentos sobre sua ocorrência.</span>
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label>Categoria *</label>
+          <select id="f-cat">
+            <option value="">Selecione...</option>
+            <option>🔧 Manutenção / Infraestrutura</option>
+            <option>🔊 Barulho / Perturbação</option>
+            <option>🅿️ Garagem / Veículos</option>
+            <option>🐾 Animais</option>
+            <option>🔒 Segurança</option>
+            <option>🧹 Limpeza / Conservação</option>
+            <option>💡 Iluminação</option>
+            <option>📦 Entregas / Encomendas</option>
+            <option>💧 Vazamentos / Água</option>
+            <option>📋 Sugestão</option>
+            <option>❓ Outros</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Urgência *</label>
+          <select id="f-urg">
+            <option value="Normal">Normal</option>
+            <option value="Alta">Alta</option>
+            <option value="Urgente">Urgente ⚠️</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row"><label>Título da ocorrência *</label><input type="text" id="f-titulo" placeholder="Resumo breve do problema"></div>
+
+      <div class="form-row" id="portaria-row">
+        <label>
+          Ocorrência reportada à portaria?
+          <span id="portaria-obrig-label" style="font-size:0.7rem;color:var(--danger);text-transform:none;letter-spacing:0;font-weight:400;display:none;"> * obrigatório para Alta / Urgente</span>
+        </label>
+        <div class="portaria-row">
+          <button type="button" class="portaria-btn" id="portaria-sim" onclick="selectPortaria('Sim')">✅ Sim, já reportei</button>
+          <button type="button" class="portaria-btn" id="portaria-nao" onclick="selectPortaria('Não')">❌ Não reportei</button>
+        </div>
+        <div class="portaria-obrig" id="portaria-err">Por favor, informe se a ocorrência foi reportada à portaria.</div>
+      </div>
+      <div class="form-row"><label>Descrição detalhada *</label><textarea id="f-desc" placeholder="Descreva o que aconteceu, onde, quando e qualquer detalhe relevante..."></textarea></div>
+
+      <div class="form-row">
+        <label>Anexos — imagens ou documentos (máx. 5 arquivos · 10 MB cada)</label>
+        <div class="file-drop" id="fileDrop">
+          <input type="file" id="fileInput" multiple accept="image/*,.pdf,.doc,.docx,.txt" onchange="handleFiles(this.files)">
+          <div class="file-drop-icon">📎</div>
+          <div class="file-drop-text">Arraste arquivos aqui ou <strong>clique para selecionar</strong></div>
+        </div>
+        <div class="file-preview" id="filePreview"></div>
+        <div class="upload-progress" id="upProg">
+          <div class="progress-label">Enviando anexos… <span id="progPct">0%</span></div>
+          <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progBar"></div></div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="btnSend" onclick="submitOccurrence()">Enviar ocorrência →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ GESTÃO LOGIN ══════ -->
+<div id="page-gestao" class="page">
+  <div id="login-screen">
+    <div class="login-wrap">
+      <div class="login-icon">🔐</div>
+      <div class="page-title" style="font-size:1.7rem;margin-bottom:6px;">Área de Gestão</div>
+      <div class="page-sub">Acesso restrito ao síndico e conselho fiscal.</div>
+      <div class="card" style="text-align:left;margin-top:24px;">
+        <div class="form-row"><label>E-mail</label><input type="email" id="l-email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <div class="form-row"><label>Senha</label><input type="password" id="l-pwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+        <div id="l-err" style="color:var(--danger);font-size:0.82rem;margin-bottom:12px;display:none;"></div>
+        <button class="btn btn-primary" id="btnLogin" onclick="doLogin()">Entrar</button>
+      </div>
+      <p class="login-hint">Apenas gestores cadastrados têm acesso a esta área.</p>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" style="display:none;">
+    <div class="dash-wrap">
+      <div class="dash-header">
+        <div>
+          <div class="page-eyebrow">Painel de Gestão</div>
+          <div class="page-title" style="font-size:1.7rem;">Ocorrências</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <div class="user-badge">
+            <div class="user-avatar" id="uInitial">?</div>
+            <div><div class="user-name" id="uName">–</div><div class="user-role" id="uRole">–</div></div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="openModal()">🔑 Alterar senha</button>
+          <button class="btn btn-ghost btn-sm" onclick="doLogout()">Sair</button>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-lbl">Total</div><div class="stat-num c-accent" id="st-t">–</div></div>
+        <div class="stat-card"><div class="stat-lbl">Abertas</div><div class="stat-num c-danger" id="st-a">–</div></div>
+        <div class="stat-card"><div class="stat-lbl">Em andamento</div><div class="stat-num c-warn" id="st-m">–</div></div>
+        <div class="stat-card"><div class="stat-lbl">Resolvidas</div><div class="stat-num c-success" id="st-r">–</div></div>
+      </div>
+
+      <div class="toolbar">
+        <div class="filter-pills">
+          <button class="fpill active" onclick="setFilter('todas',this)">Todas</button>
+          <button class="fpill" onclick="setFilter('Aberta',this)">🔴 Abertas</button>
+          <button class="fpill" onclick="setFilter('Em andamento',this)">🟡 Andamento</button>
+          <button class="fpill" onclick="setFilter('Resolvida',this)">🟢 Resolvidas</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+          <button class="btn btn-ghost btn-sm" onclick="exportXLSX()" title="Exportar ocorrências visíveis para Excel">📊 Exportar XLSX</button>
+          <div class="search-wrap"><input type="text" id="srch" placeholder="🔍 Buscar..." oninput="renderList()"></div>
+        </div>
+      </div>
+
+      <div class="occ-list" id="occList"><div class="empty-state"><div class="spin"></div></div></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+// ╔═══════════════════════════════════════════════════════════════╗
+// ║  🔧 FIREBASE — cole aqui os dados do seu projeto             ║
+// ╚═══════════════════════════════════════════════════════════════╝
+const FB = {
+    apiKey: "AIzaSyB9XxoqhPAlaUTuATuV8yym4ouT8uDXyHs",
+    authDomain: "portal-condominio-gili.firebaseapp.com",
+    projectId: "portal-condominio-gili",
+    storageBucket: "portal-condominio-gili.firebasestorage.app",
+    messagingSenderId: "1018658651405",
+    appId: "1:1018658651405:web:921c7b13ec9762c8a30444"
+};
+
+// ╔═══════════════════════════════════════════════════════════════╗
+// ║  ☁️ CLOUDINARY — upload gratuito de arquivos                 ║
+// ║  1. Crie conta em cloudinary.com (grátis)                    ║
+// ║  2. Settings › Upload › Upload Presets › Add preset          ║
+// ║     Signing mode: Unsigned  →  copie o nome do preset        ║
+// ║  3. Cole o Cloud Name e o Preset Name abaixo                 ║
+// ╚═══════════════════════════════════════════════════════════════╝
+const CLD_CLOUD  = "dnwyculuo";   // ex: "abc123xyz"
+const CLD_PRESET = "ocorrencias_unsigned";   // ex: "ocorrencias_unsigned"
+
+// ╔═══════════════════════════════════════════════════════════════╗
+// ║  📧 EMAILJS — notificação por e-mail ao registrar ocorrência ║
+// ║  1. Crie conta grátis em emailjs.com                         ║
+// ║  2. Add Email Service (Gmail recomendado)                    ║
+// ║  3. Create Email Template — use as variáveis abaixo:         ║
+// ║     {{nome}}, {{unidade}}, {{categoria}}, {{urgencia}},      ║
+// ║     {{titulo}}, {{descricao}}                                ║
+// ║  4. Cole Public Key, Service ID e Template ID abaixo         ║
+// ╚═══════════════════════════════════════════════════════════════╝
+const EMAILJS_PUBLIC_KEY  = "r4t6R7DsTn-gcvDaL";   // Account › API Keys › Public Key
+const EMAILJS_SERVICE_ID  = "service_vupkfca";   // Email Services › seu serviço
+const EMAILJS_TEMPLATE_ID = "template_tp67hy7";   // Email Templates › seu template
+// E-mail(s) que receberão a notificação (síndico / quem desejar)
+const NOTIFICATION_EMAILS = [
+  "sindico.arimateia@outlook.com", "netomaruagem@yahoo.com.br"
+  // adicione mais: , "outro@email.com"
+];
+
+// ╔═══════════════════════════════════════════════════════════════╗
+// ║  👥 GESTORES — atualize com dados reais                      ║
+// ║  Cadastre os mesmos e-mails em Firebase › Authentication     ║
+// ╚═══════════════════════════════════════════════════════════════╝
+const GESTORES = {
+  "sindico.arimateia@outlook.com":      { nome: "Arimateia",       cargo: "Síndico"         },
+  "netomaruagem@yahoo.com.br":          { nome: "José Vicente",    cargo: "Sub-Síndico"     },
+  "victorjlduarte@gmail.com":           { nome: "Victor Duarte",   cargo: "Conselho Fiscal" },
+  "valeriocalado@gmail.com":            { nome: "Valerio Calado",  cargo: "Conselho Fiscal" },
+  "wagnerfcosta@hotmail.com":           { nome: "Wagner Costa",    cargo: "Conselho Fiscal" }
+};
+// ════════════════════════════════════════════════════════════════
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, orderBy, query, onSnapshot, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+let auth, db, unsub = null;
+let ocorrencias = [], filter = 'todas', openId = null, me = null;
+let files = [], ready = false;
+let portaria = null; // 'Sim' | 'Não' | null
+
+function init() {
+  if (FB.apiKey === "COLOQUE_AQUI" || CLD_CLOUD === "COLOQUE_AQUI") {
+    document.getElementById('cfg-warn').style.display = 'block'; return;
+  }
+  try {
+    const app = initializeApp(FB);
+    auth = getAuth(app); db = getFirestore(app); ready = true;
+    // Init EmailJS if configured
+    if (EMAILJS_PUBLIC_KEY !== "COLOQUE_AQUI") {
+      emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+    }
+    onAuthStateChanged(auth, u => {
+      if (u && GESTORES[u.email]) { me = { email: u.email, ...GESTORES[u.email] }; showDash(); }
+      else if (u) signOut(auth);
+    });
+  } catch(e) { document.getElementById('cfg-warn').style.display = 'block'; }
+}
+
+// expose
+window.goPage=goPage; window.handleFiles=handleFiles; window.removeFile=removeFile;
+window.submitOccurrence=submitOccurrence; window.doLogin=doLogin; window.doLogout=doLogout;
+window.setFilter=setFilter; window.changeStatus=changeStatus; window.deleteOcc=deleteOcc;
+window.toggleExpand=toggleExpand; window.addNote=addNote;
+window.openLightbox=openLightbox; window.closeLightbox=closeLightbox;
+window.openModal=openModal; window.closeModal=closeModal;
+window.saveNewPassword=saveNewPassword; window.checkPwdStrength=checkPwdStrength;
+window.exportXLSX=exportXLSX;
+window.selectPortaria=selectPortaria;
+
+function goPage(p) {
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-pill').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.getElementById('tab-'+p).classList.add('active');
+  if (p==='gestao' && !me) showLogin();
+}
+
+// FILES
+function handleFiles(fs) {
+  for (const f of fs) {
+    if (files.length>=5){showErr('Máximo de 5 arquivos.');break;}
+    if (f.size>10*1024*1024){showErr(`"${f.name}" excede 10 MB.`);continue;}
+    if (!files.find(x=>x.name===f.name&&x.size===f.size)) files.push(f);
+  }
+  renderPrev();
+}
+function renderPrev() {
+  document.getElementById('filePreview').innerHTML = files.map((f,i)=>`
+    <div class="file-chip"><span>${icon(f.name)} ${f.name}</span><span class="file-chip-rm" onclick="removeFile(${i})">✕</span></div>`).join('');
+}
+function removeFile(i){files.splice(i,1);renderPrev();}
+function icon(n){const e=n.split('.').pop().toLowerCase();return['jpg','jpeg','png','gif','webp'].includes(e)?'🖼️':e==='pdf'?'📄':'📎';}
+function isImg(n){return['jpg','jpeg','png','gif','webp'].includes(n.split('.').pop().toLowerCase());}
+
+const drop=document.getElementById('fileDrop');
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('dragover');});
+drop.addEventListener('dragleave',()=>drop.classList.remove('dragover'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('dragover');handleFiles(e.dataTransfer.files);});
+
+// PORTARIA FIELD
+function selectPortaria(val) {
+  portaria = val;
+  document.getElementById('portaria-sim').className = 'portaria-btn' + (val==='Sim' ? ' sel-sim' : '');
+  document.getElementById('portaria-nao').className = 'portaria-btn' + (val==='Não' ? ' sel-nao' : '');
+  document.getElementById('portaria-err').style.display = 'none';
+}
+
+// Show/hide portaria obligation label when urgência changes
+document.getElementById('f-urg').addEventListener('change', function() {
+  const isUrgent = ['Alta','Urgente'].includes(this.value);
+  document.getElementById('portaria-obrig-label').style.display = isUrgent ? 'inline' : 'none';
+});
+
+// CLOUDINARY UPLOAD
+function uploadFile(f, idx, total) {
+  return new Promise((res,rej)=>{
+    const fd=new FormData();
+    fd.append('file',f); fd.append('upload_preset',CLD_PRESET); fd.append('folder','ocorrencias');
+    const xhr=new XMLHttpRequest();
+    xhr.open('POST',`https://api.cloudinary.com/v1_1/${CLD_CLOUD}/auto/upload`);
+    xhr.upload.onprogress=e=>{
+      if(e.lengthComputable){
+        const p=Math.round(((idx+e.loaded/e.total)/total)*100);
+        document.getElementById('progBar').style.width=p+'%';
+        document.getElementById('progPct').textContent=p+'%';
+      }
+    };
+    xhr.onload=()=>xhr.status===200?res(JSON.parse(xhr.responseText)):rej(new Error('Upload falhou'));
+    xhr.onerror=()=>rej(new Error('Erro de rede'));
+    xhr.send(fd);
+  });
+}
+
+// SUBMIT
+async function submitOccurrence() {
+  if (!ready){showErr('Configure o Firebase e Cloudinary primeiro.');return;}
+  const nome=document.getElementById('f-nome').value.trim();
+  const unid=document.getElementById('f-unidade').value.trim();
+  const tel =document.getElementById('f-tel').value.trim();
+  const cat =document.getElementById('f-cat').value;
+  const tit =document.getElementById('f-titulo').value.trim();
+  const desc=document.getElementById('f-desc').value.trim();
+  if(!nome||!unid||!cat||!tit||!desc){showErr('Preencha todos os campos obrigatórios (*). ');return;}
+
+  // Portaria: obrigatório se urgência Alta ou Urgente
+  const urg = document.getElementById('f-urg').value;
+  if (['Alta','Urgente'].includes(urg) && !portaria) {
+    document.getElementById('portaria-err').style.display = 'block';
+    document.getElementById('portaria-obrig-label').style.display = 'inline';
+    showErr('Para urgência Alta ou Urgente, informe se a ocorrência foi reportada à portaria.');
+    return;
+  }
+  const btn=document.getElementById('btnSend');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Enviando…';
+  try {
+    const atts=[];
+    if(files.length){
+      document.getElementById('upProg').style.display='block';
+      for(let i=0;i<files.length;i++){
+        const r=await uploadFile(files[i],i,files.length);
+        atts.push({name:files[i].name,url:r.secure_url,public_id:r.public_id});
+      }
+      document.getElementById('upProg').style.display='none';
+    }
+    await addDoc(collection(db,'ocorrencias'),{
+      ts:serverTimestamp(), nome, unidade:unid, telefone: tel || null,
+      categoria:cat, urgencia:urg,
+      portaria: portaria || null,
+      titulo:tit, descricao:desc, status:'Aberta', attachments:atts, notas:[]
+    });
+    // Send email notification
+    sendNotification({ nome, unidade: unid, telefone: tel, categoria: cat, urgencia: urg, portaria: portaria || 'Não informado', titulo: tit, descricao: desc });
+    ['f-nome','f-titulo','f-desc','f-tel'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('f-cat').value='';
+    document.getElementById('f-urg').value='Normal';
+    document.getElementById('portaria-obrig-label').style.display='none';
+    portaria=null; selectPortaria(null);
+    files=[]; renderPrev();
+    const ok=document.getElementById('alert-ok');
+    ok.style.display='block'; setTimeout(()=>ok.style.display='none',5000);
+  } catch(e){ showErr('Erro: '+e.message); }
+  btn.disabled=false; btn.innerHTML='Enviar ocorrência →';
+}
+
+function showErr(msg) {
+  document.getElementById('err-txt').textContent=msg;
+  const el=document.getElementById('alert-err');
+  el.style.display='block'; setTimeout(()=>el.style.display='none',6000);
+}
+
+// AUTH
+async function doLogin() {
+  if(!ready)return;
+  const email=document.getElementById('l-email').value.trim();
+  const pwd  =document.getElementById('l-pwd').value;
+  const errEl=document.getElementById('l-err');
+  errEl.style.display='none';
+  if(!GESTORES[email]){errEl.textContent='E-mail não autorizado.';errEl.style.display='block';return;}
+  const btn=document.getElementById('btnLogin');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Entrando…';
+  try { await signInWithEmailAndPassword(auth,email,pwd); }
+  catch(e){ errEl.textContent='E-mail ou senha incorretos.';errEl.style.display='block';btn.disabled=false;btn.innerHTML='Entrar'; }
+}
+
+async function doLogout() {
+  if(unsub){unsub();unsub=null;} me=null; await signOut(auth); showLogin();
+}
+
+function showLogin(){document.getElementById('login-screen').style.display='block';document.getElementById('dashboard').style.display='none';}
+
+function showDash(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  document.getElementById('uInitial').textContent=me.nome.charAt(0).toUpperCase();
+  document.getElementById('uName').textContent=me.nome;
+  document.getElementById('uRole').textContent=me.cargo;
+  listen();
+}
+
+function listen(){
+  if(unsub)unsub();
+  const q=query(collection(db,'ocorrencias'),orderBy('ts','desc'));
+  unsub=onSnapshot(q,snap=>{
+    ocorrencias=snap.docs.map(d=>({id:d.id,...d.data()}));
+    stats(); renderList();
+  });
+}
+
+function stats(){
+  document.getElementById('st-t').textContent=ocorrencias.length;
+  document.getElementById('st-a').textContent=ocorrencias.filter(x=>x.status==='Aberta').length;
+  document.getElementById('st-m').textContent=ocorrencias.filter(x=>x.status==='Em andamento').length;
+  document.getElementById('st-r').textContent=ocorrencias.filter(x=>x.status==='Resolvida').length;
+}
+
+function setFilter(f,el){filter=f;document.querySelectorAll('.fpill').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderList();}
+
+function renderList(){
+  const s=(document.getElementById('srch')?.value||'').toLowerCase();
+  let data=filter==='todas'?ocorrencias:ocorrencias.filter(x=>x.status===filter);
+  if(s) data=data.filter(x=>[x.titulo,x.descricao,x.nome,x.unidade,x.categoria].some(v=>(v||'').toLowerCase().includes(s)));
+  const el=document.getElementById('occList');
+  if(!data.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon">📭</div><div>Nenhuma ocorrência encontrada.</div></div>`;return;}
+  el.innerHTML=data.map(o=>{
+    const ts=o.ts?.toDate?o.ts.toDate():new Date();
+    const dt=ts.toLocaleDateString('pt-BR')+' '+ts.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const dc={'Aberta':'dot-aberta','Em andamento':'dot-andamento','Resolvida':'dot-resolvida'}[o.status]||'dot-aberta';
+    const bc={'Aberta':'b-aberta','Em andamento':'b-andamento','Resolvida':'b-resolvida'}[o.status]||'b-aberta';
+    const isOpen=openId===o.id;
+    const urgB=o.urgencia&&o.urgencia!=='Normal'?`<span class="badge ${o.urgencia==='Urgente'?'b-urg':'b-alta'}">⚠️ ${o.urgencia}</span>`:'';
+    const portB=o.portaria?`<span class="badge" style="background:rgba(77,240,158,.1);color:var(--success);border:1px solid rgba(77,240,158,.25);">🏢 Portaria: ${o.portaria}</span>`:'';
+    const atts=o.attachments||[];
+    const attB=atts.length?`<span class="badge b-attach">📎 ${atts.length} anexo${atts.length>1?'s':''}</span>`:'';
+    const attGrid=atts.length?`<div class="attach-grid">${atts.map(a=>isImg(a.name)
+      ?`<div class="attach-thumb" onclick="openLightbox('${a.url}')"><img src="${a.url}" alt="${a.name}" loading="lazy"><div class="attach-overlay">🔍</div></div>`
+      :`<a class="attach-file" href="${a.url}" target="_blank">${icon(a.name)} ${a.name}</a>`).join('')}</div>`:''
+    const notasHtml=(o.notas||[]).map(n=>`<div class="note-item">${n.texto}<div class="note-meta">${n.autor} · ${n.data}</div></div>`).join('');
+    const aA=o.status==='Aberta'?'active-status':'';
+    const aM=o.status==='Em andamento'?'active-status':'';
+    const aR=o.status==='Resolvida'?'active-status':'';
+    return `
+    <div class="occ-card ${isOpen?'open':''}" id="occ-${o.id}">
+      <div class="occ-card-head" onclick="toggleExpand('${o.id}')">
+        <div class="occ-dot ${dc}"></div>
+        <div class="occ-main">
+          <div class="occ-badges"><span class="badge ${bc}">${o.status}</span><span class="badge b-cat">${o.categoria||''}</span>${urgB}${portB}${attB}</div>
+          <div class="occ-title-text">${o.titulo||'Sem título'}</div>
+          <div class="occ-meta-line">${o.nome||'–'} · ${o.unidade||'–'}${o.telefone ? ' · 📞 ' + o.telefone : ''}</div>
+        </div>
+        <div class="occ-time">${dt}</div>
+      </div>
+      <div class="occ-body">
+        <div class="occ-desc-text">${(o.descricao||'').replace(/\n/g,'<br>')}</div>
+        ${attGrid}
+        <div class="status-bar">
+          <span>Status:</span>
+          <button class="sbtn ${aA}" onclick="changeStatus('${o.id}','Aberta')">🔴 Aberta</button>
+          <button class="sbtn ${aM}" onclick="changeStatus('${o.id}','Em andamento')">🟡 Em andamento</button>
+          <button class="sbtn ${aR}" onclick="changeStatus('${o.id}','Resolvida')">🟢 Resolvida</button>
+          <button class="sbtn del"   onclick="deleteOcc('${o.id}')">🗑 Excluir</button>
+        </div>
+        <div class="notes-section">
+          <div class="notes-lbl">Anotações internas</div>
+          ${notasHtml}
+          <div class="note-row">
+            <input type="text" id="note-${o.id}" placeholder="Adicionar anotação interna…" onkeydown="if(event.key==='Enter')addNote('${o.id}')">
+            <button class="btn btn-ghost btn-sm" onclick="addNote('${o.id}')">Salvar</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleExpand(id){openId=openId===id?null:id;renderList();}
+
+async function changeStatus(id,s){await updateDoc(doc(db,'ocorrencias',id),{status:s});}
+async function deleteOcc(id){
+  if(!confirm('Excluir permanentemente?'))return;
+  await deleteDoc(doc(db,'ocorrencias',id));
+  if(openId===id)openId=null;
+}
+async function addNote(id){
+  const inp=document.getElementById('note-'+id);
+  const txt=inp?.value?.trim(); if(!txt)return;
+  const o=ocorrencias.find(x=>x.id===id); if(!o)return;
+  const notas=[...(o.notas||[]),{texto:txt,autor:me.nome,data:new Date().toLocaleDateString('pt-BR')+' '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}];
+  await updateDoc(doc(db,'ocorrencias',id),{notas});
+  inp.value='';
+}
+
+function openLightbox(url){document.getElementById('lb-img').src=url;document.getElementById('lightbox').classList.add('open');}
+function closeLightbox(){document.getElementById('lightbox').classList.remove('open');document.getElementById('lb-img').src='';}
+
+// EMAIL NOTIFICATION
+async function sendNotification(data) {
+  if (EMAILJS_PUBLIC_KEY === "COLOQUE_AQUI") return; // not configured yet
+  const templateParams = {
+    nome:       data.nome,
+    unidade:    data.unidade,
+    telefone:   data.telefone || 'Não informado',
+    categoria:  data.categoria,
+    urgencia:   data.urgencia,
+    portaria:   data.portaria || 'Não informado',
+    titulo:     data.titulo,
+    descricao:  data.descricao,
+    data_hora:  new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})
+  };
+  for (const email of NOTIFICATION_EMAILS) {
+    try {
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { ...templateParams, to_email: email });
+    } catch(e) {
+      console.warn('EmailJS error for', email, e);
+    }
+  }
+}
+
+// CHANGE PASSWORD MODAL
+function openModal() {
+  ['pwd-atual','pwd-nova','pwd-conf'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('pwd-modal-err').style.display = 'none';
+  document.getElementById('pwd-modal-ok').style.display = 'none';
+  document.getElementById('pwd-fill').style.width = '0%';
+  document.getElementById('pwd-hint').textContent = '';
+  document.getElementById('modal-pwd').classList.add('open');
+}
+function closeModal() { document.getElementById('modal-pwd').classList.remove('open'); }
+
+function checkPwdStrength() {
+  const v = document.getElementById('pwd-nova').value;
+  const fill = document.getElementById('pwd-fill');
+  const hint = document.getElementById('pwd-hint');
+  let score = 0;
+  if (v.length >= 8)  score++;
+  if (/[A-Z]/.test(v)) score++;
+  if (/[0-9]/.test(v)) score++;
+  if (/[^A-Za-z0-9]/.test(v)) score++;
+  const colors = ['#f0605a','#f0aa4d','#f0aa4d','#4df09e'];
+  const labels = ['Muito fraca','Fraca','Média','Forte'];
+  fill.style.width = (score * 25) + '%';
+  fill.style.background = colors[score - 1] || 'var(--border)';
+  hint.textContent = v.length ? labels[score - 1] || '' : '';
+}
+
+async function saveNewPassword() {
+  const atual = document.getElementById('pwd-atual').value;
+  const nova  = document.getElementById('pwd-nova').value;
+  const conf  = document.getElementById('pwd-conf').value;
+  const errEl = document.getElementById('pwd-modal-err');
+  const okEl  = document.getElementById('pwd-modal-ok');
+  errEl.style.display = 'none'; okEl.style.display = 'none';
+
+  if (!atual || !nova || !conf) { errEl.textContent = 'Preencha todos os campos.'; errEl.style.display = 'block'; return; }
+  if (nova.length < 8) { errEl.textContent = 'A nova senha deve ter ao menos 8 caracteres.'; errEl.style.display = 'block'; return; }
+  if (nova !== conf) { errEl.textContent = 'A confirmação não confere com a nova senha.'; errEl.style.display = 'block'; return; }
+
+  const btn = document.getElementById('btn-pwd-save');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Salvando…';
+
+  try {
+    const user = auth.currentUser;
+    const cred = EmailAuthProvider.credential(user.email, atual);
+    await reauthenticateWithCredential(user, cred);
+    await updatePassword(user, nova);
+    okEl.style.display = 'block';
+    setTimeout(() => closeModal(), 2000);
+  } catch(e) {
+    if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+      errEl.textContent = 'Senha atual incorreta.';
+    } else {
+      errEl.textContent = 'Erro: ' + e.message;
+    }
+    errEl.style.display = 'block';
+  }
+  btn.disabled = false; btn.innerHTML = 'Salvar';
+}
+
+// EXPORT XLSX
+function exportXLSX() {
+  const s = (document.getElementById('srch')?.value || '').toLowerCase();
+  let data = filter === 'todas' ? ocorrencias : ocorrencias.filter(x => x.status === filter);
+  if (s) data = data.filter(x =>
+    [x.titulo, x.descricao, x.nome, x.unidade, x.categoria].some(v => (v||'').toLowerCase().includes(s))
+  );
+
+  if (!data.length) { alert('Nenhuma ocorrência para exportar com o filtro atual.'); return; }
+
+  const rows = data.map(o => {
+    const ts = o.ts?.toDate ? o.ts.toDate() : new Date();
+    const notas = (o.notas || []).map(n => `[${n.data} – ${n.autor}] ${n.texto}`).join(' | ');
+    const anexos = (o.attachments || []).map(a => a.url).join(' | ');
+    return {
+      'Data/Hora':          ts.toLocaleDateString('pt-BR') + ' ' + ts.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}),
+      'Nome':               o.nome        || '',
+      'Unidade':            o.unidade     || '',
+      'Telefone':           o.telefone    || '',
+      'Categoria':          o.categoria   || '',
+      'Urgência':           o.urgencia    || '',
+      'Reportou Portaria':  o.portaria    || '',
+      'Título':             o.titulo      || '',
+      'Descrição':          o.descricao   || '',
+      'Status':             o.status      || '',
+      'Anotações':          notas,
+      'Anexos (URLs)':      anexos
+    };
+  });
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+
+  // Column widths
+  ws['!cols'] = [
+    {wch:18}, // Data/Hora
+    {wch:22}, // Nome
+    {wch:18}, // Unidade
+    {wch:16}, // Telefone
+    {wch:28}, // Categoria
+    {wch:10}, // Urgência
+    {wch:18}, // Reportou Portaria
+    {wch:32}, // Título
+    {wch:48}, // Descrição
+    {wch:14}, // Status
+    {wch:40}, // Anotações
+    {wch:40}, // Anexos
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Ocorrências');
+
+  const label = filter === 'todas' ? 'todas' : filter.toLowerCase().replace(/ /g,'-');
+  const date  = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `ocorrencias-${label}-${date}.xlsx`);
+}
+
+init();
+</script>
+</body>
+</html>
