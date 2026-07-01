@@ -935,18 +935,28 @@ function exportXLSX() {
 function showWAModal(d) {
   const now = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 
+  // String.fromCodePoint funciona corretamente em todos os browsers incluindo Samsung
+  const e = function(cp) { return String.fromCodePoint(cp); };
+  const EM  = e(0x1F3E2); // 🏢
+  const CAL = e(0x1F4C5); // 📅
+  const USR = e(0x1F464); // 👤
+  const TEL = e(0x1F4DE); // 📞
+  const CAT = e(0x1F4C2); // 📂
+  const WRN = e(0x26A0) + e(0xFE0F); // ⚠️
+  const PIN = e(0x1F4CC); // 📌
+
   const linhas = [
-    '\uD83C\uDFE2 *Nova Ocorr\u00EAncia \u2014 Assuncion Gili*',
+    EM + ' *Nova Ocorr\u00EAncia \u2014 Assuncion Gili*',
     '',
-    '\uD83D\uDCC5 ' + now,
-    '\uD83D\uDC64 ' + d.nome + ' \u2014 ' + d.unidade,
+    CAL + ' ' + now,
+    USR + ' ' + d.nome + ' \u2014 ' + d.unidade,
   ];
-  if (d.telefone) linhas.push('\uD83D\uDCDE ' + d.telefone);
+  if (d.telefone) linhas.push(TEL + ' ' + d.telefone);
   linhas.push('');
-  linhas.push('\uD83D\uDCC2 ' + d.categoria);
-  linhas.push('\u26A0\uFE0F Urg\u00EAncia: ' + d.urgencia);
+  linhas.push(CAT + ' ' + d.categoria);
+  linhas.push(WRN + ' Urg\u00EAncia: ' + d.urgencia);
   linhas.push('');
-  linhas.push('\uD83D\uDCCC *' + d.titulo + '*');
+  linhas.push(PIN + ' *' + d.titulo + '*');
   linhas.push(d.descricao);
 
   const msg = linhas.join('\n');
