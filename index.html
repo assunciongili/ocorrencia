@@ -476,7 +476,7 @@ const CLD_PRESET = "ocorrencias_unsigned";   // ex: "ocorrencias_unsigned"
 // ║  4. Cole Public Key, Service ID e Template ID abaixo         ║
 // ╚═══════════════════════════════════════════════════════════════╝
 const EMAILJS_PUBLIC_KEY  = "r4t6R7DsTn-gcvDaL";   // Account › API Keys › Public Key
-const EMAILJS_SERVICE_ID  = "service_vupkfca";   // Email Services › seu serviço
+const EMAILJS_SERVICE_ID  = "service_2za0kj4";   // Email Services › seu serviço
 const EMAILJS_TEMPLATE_ID = "template_tp67hy7";   // Email Templates › seu template
 // E-mail(s) que receberão a notificação (síndico / quem desejar)
 const NOTIFICATION_EMAILS = [
@@ -935,32 +935,21 @@ function exportXLSX() {
 function showWAModal(d) {
   const now = new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 
-  // String.fromCodePoint funciona corretamente em todos os browsers incluindo Samsung
-  const e = function(cp) { return String.fromCodePoint(cp); };
-  const EM  = e(0x1F3E2); // 🏢
-  const CAL = e(0x1F4C5); // 📅
-  const USR = e(0x1F464); // 👤
-  const TEL = e(0x1F4DE); // 📞
-  const CAT = e(0x1F4C2); // 📂
-  const WRN = e(0x26A0) + e(0xFE0F); // ⚠️
-  const PIN = e(0x1F4CC); // 📌
-
   const linhas = [
-    EM + ' *Nova Ocorr\u00EAncia \u2014 Assuncion Gili*',
+    '*Nova Ocorrencia - Assuncion Gili*',
     '',
-    CAL + ' ' + now,
-    USR + ' ' + d.nome + ' \u2014 ' + d.unidade,
+    'Data/Hora: ' + now,
+    'Condomino: ' + d.nome + ' - ' + d.unidade,
   ];
-  if (d.telefone) linhas.push(TEL + ' ' + d.telefone);
+  if (d.telefone) linhas.push('Telefone: ' + d.telefone);
   linhas.push('');
-  linhas.push(CAT + ' ' + d.categoria);
-  linhas.push(WRN + ' Urg\u00EAncia: ' + d.urgencia);
+  linhas.push('Categoria: ' + d.categoria);
+  linhas.push('Urgencia: ' + d.urgencia);
   linhas.push('');
-  linhas.push(PIN + ' *' + d.titulo + '*');
+  linhas.push('*' + d.titulo + '*');
   linhas.push(d.descricao);
 
   const msg = linhas.join('\n');
-
   document.getElementById('wa-preview').textContent = msg;
   window._waMsg = msg;
   document.getElementById('modal-whatsapp').classList.add('open');
